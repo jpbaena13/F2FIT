@@ -1,5 +1,6 @@
+import { formatISO } from 'date-fns';
 import { Image } from 'expo-image';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -7,6 +8,7 @@ import {
 } from 'react-native';
 import { Button, Snackbar } from 'react-native-paper';
 
+import api from '@/api/aws';
 import HabitsForm from '@/components/home/HabitsForm';
 import WellnessForm from '@/components/home/WellnessForm';
 import ParallaxScrollView from '@/components/parallax-scroll-view';
@@ -27,12 +29,52 @@ const defaultHabits: Habits = {
 };
 
 export default function HomeScreen() {
-  const [step, setSteps] = useState<number>(0);
+  const [dayInfoId, setDayInfoId] = useState<string | null>(null);
   const [selectedEnergy, setSelectedEnergy] = useState<number | null>(null);
   const [selectedEmotional, setSelectedEmotional] = useState<number | null>(null);
   const [text, setText] = useState("");
   const [habits, setHabits] = useState<Habits>(defaultHabits);
+  const [step, setSteps] = useState<number>(0);
   const [snackbarText, setSnackbarText] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const today = useMemo(() => formatISO(new Date(), { representation: 'date' }), []);
+
+  const saveDayInfo = async () => {
+    try {
+      setLoading(true);
+
+      if (dayInfoId) {
+        await api.dayInfo.update({
+          id: dayInfoId,
+          date: today,
+          energyLevel: selectedEnergy as number,
+          emotionalState: selectedEmotional as number,
+          notes: text,
+          habits,
+        });
+      } else {
+        const data = await api.dayInfo.create({
+          date: today,
+          energyLevel: selectedEnergy as number,
+          emotionalState: selectedEmotional as number,
+          notes: text,
+          habits,
+        });
+
+        setDayInfoId(data.id);
+        setSelectedEnergy(data.energyLevel);
+        setSelectedEmotional(data.emotionalState);
+        setText(data.notes);
+        setHabits(data.habits ? data.habits : defaultHabits);
+      }
+
+      setSnackbarText("El registro de hoy se guardó exitosamente");
+      setLoading(false);
+    } catch (error) {
+      setSnackbarText("Error al guardar la información. Inténtalo de nuevo.");
+    }
+  };
 
   const handleEnergyPress = (value: number) => {
     setSelectedEnergy(value);
@@ -42,9 +84,9 @@ export default function HomeScreen() {
   const handleEmotionalPress = (value: number) => {
     setSelectedEmotional(value);
     setSnackbarText(null);
-  }
+  };
 
-  const handleHomePress = () => {
+  const handleHomePress = async () => {
     if (step === 0) {
       if (!selectedEnergy || !selectedEmotional) {
         setSnackbarText("Por favor, selecciona ambos valores");
@@ -52,8 +94,22 @@ export default function HomeScreen() {
       }
       setSteps(1);
     } else if (step === 1) {
+      saveDayInfo();
     }
-  }
+  };
+
+  useEffect(() => {
+    api.dayInfo.filterByDate(today).then((data) => {
+      if (data) {
+        setDayInfoId(data.id);
+        setSelectedEnergy(data.energyLevel);
+        setSelectedEmotional(data.emotionalState);
+        setText(data.notes);
+        setHabits(data.habits ? data.habits : defaultHabits);
+        setSnackbarText("Ya existe un registro para hoy. Puedes actualizarlo.");
+      }
+    });
+  }, []);
 
   return (
     <KeyboardAvoidingView
@@ -72,6 +128,7 @@ export default function HomeScreen() {
       >
         {step === 0
           && <WellnessForm
+            today={today}
             selectedEnergy={selectedEnergy}
             selectedEmotional={selectedEmotional}
             text={text}
@@ -84,7 +141,11 @@ export default function HomeScreen() {
         {step === 1 && <HabitsForm habits={habits} setHabits={setHabits} />}
 
         <ThemedView style={{ marginTop: 20 }}>
-          <Button mode="contained-tonal" onPress={handleHomePress}>
+          <Button
+            loading={loading}
+            mode="contained-tonal"
+            onPress={handleHomePress}
+          >
             {step === 0 ? "Siguiente" : "Guardar"}
           </Button>
           {step === 1

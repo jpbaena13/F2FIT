@@ -1,12 +1,14 @@
-import moment from 'moment';
 import { StyleSheet, View } from 'react-native';
 import { Button, TextInput } from 'react-native-paper';
 
 import { HelloWave } from '@/components/hello-wave';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale/es';
 
 type WellnessFormProps = {
+  today: string;
   selectedEnergy: number | null;
   selectedEmotional: number | null;
   text: string;
@@ -15,6 +17,7 @@ type WellnessFormProps = {
   setText: (text: string) => void;
 };
 const WellnessForm = ({
+  today,
   selectedEnergy,
   selectedEmotional,
   text,
@@ -31,8 +34,8 @@ const WellnessForm = ({
 
       <ThemedView style={styles.titleContainer}>
         <ThemedText type="default">
-          Hola, cuéntame como te sientes
-          hoy {moment(new Date()).format('LL')}.
+          Hola, cuéntame como te sientes hoy
+            {` ${format(new Date(today), "d 'de' MMMM, yyyy", { locale: es })}`}
         </ThemedText>
       </ThemedView>
 

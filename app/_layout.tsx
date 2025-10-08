@@ -1,12 +1,8 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import moment from "moment";
-import "moment/locale/es";
 import { MD3DarkTheme, MD3LightTheme, Provider as PaperProvider } from "react-native-paper";
 import 'react-native-reanimated';
-
-moment.locale("es");
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 

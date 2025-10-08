@@ -5,6 +5,13 @@ import { Habits } from "@/app/(tabs)";
 import { ThemedText } from "../themed-text";
 import { ThemedView } from "../themed-view";
 
+const translate = {
+  exercise: "Ejercicio",
+  hydration: "Hidratación",
+  sleep: "Sueño",
+  nutrition: "Nutrición",
+};
+
 type HabitsFormProps = {
   habits: Habits;
   setHabits: (habits: Habits) => void;
@@ -25,7 +32,7 @@ const HabitsForm = ({ habits, setHabits }: HabitsFormProps) => {
             type="subtitle"
             style={{ flex: 1, textTransform: "capitalize" }}
           >
-            {habit}
+            {translate[habit as keyof typeof translate]}
           </ThemedText>
           <Switch
             value={habits[habit as keyof Habits]}

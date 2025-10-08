@@ -10,6 +10,11 @@
       "StackName": "amplify-f2fit-dev-31ab0",
       "StackId": "arn:aws:cloudformation:us-east-1:217140082006:stack/amplify-f2fit-dev-31ab0/24741030-a3f0-11f0-a10a-0affdd7411cb",
       "AmplifyAppId": "d2if3e14jjtdn2"
+    },
+    "categories": {
+      "api": {
+        "f2fit": {}
+      }
     }
   }
 }

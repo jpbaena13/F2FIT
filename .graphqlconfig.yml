@@ -1,0 +1,12 @@
+projects:
+  f2fit:
+    schemaPath: api/graphql/schema.json
+    includes:
+      - api/graphql/**/*.ts
+    excludes:
+      - ./amplify/**
+    extensions:
+      amplify:
+        codeGenTarget: typescript
+        generatedFileName: api/API.ts
+        docsFilePath: api/graphql
