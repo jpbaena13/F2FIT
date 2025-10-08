@@ -1,4 +1,3 @@
-import { formatISO } from 'date-fns';
 import { Image } from 'expo-image';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -13,6 +12,7 @@ import HabitsForm from '@/components/home/HabitsForm';
 import WellnessForm from '@/components/home/WellnessForm';
 import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedView } from '@/components/themed-view';
+import { getFormattedDate } from '@/constants/functions';
 
 export type Habits = {
   exercise: boolean;
@@ -38,7 +38,7 @@ export default function HomeScreen() {
   const [snackbarText, setSnackbarText] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
-  const today = useMemo(() => formatISO(new Date(), { representation: 'date' }), []);
+  const today = useMemo(() => new Date(), []);
 
   const saveDayInfo = async () => {
     try {
@@ -47,7 +47,7 @@ export default function HomeScreen() {
       if (dayInfoId) {
         await api.dayInfo.update({
           id: dayInfoId,
-          date: today,
+          date: getFormattedDate(today, 'yyyy-MM-dd'),
           energyLevel: selectedEnergy as number,
           emotionalState: selectedEmotional as number,
           notes: text,
@@ -55,7 +55,7 @@ export default function HomeScreen() {
         });
       } else {
         const data = await api.dayInfo.create({
-          date: today,
+          date: getFormattedDate(today, 'yyyy-MM-dd'),
           energyLevel: selectedEnergy as number,
           emotionalState: selectedEmotional as number,
           notes: text,
@@ -99,7 +99,7 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    api.dayInfo.filterByDate(today).then((data) => {
+    api.dayInfo.filterByDate(getFormattedDate(today, 'yyyy-MM-dd')).then((data) => {
       if (data) {
         setDayInfoId(data.id);
         setSelectedEnergy(data.energyLevel);
