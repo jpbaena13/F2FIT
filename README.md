@@ -1,50 +1,108 @@
-# Welcome to your Expo app 👋
+# Expo app para F2FIT 👋
+## Ejecutar App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
-
-## Get started
-
-1. Install dependencies
+1. Instalar dependencias
 
    ```bash
    npm install
    ```
 
-2. Start the app
+2. Instalar Amplify CLI globalmente
+
+   ```bash
+   npm install -g @aws-amplify/cli
+   ```
+
+3. Importar proyecto AWS Amplify
+
+   ```bash
+   amplify pull --appId d2if3e14jjtdn2 --envName dev
+   ```
+
+4. Las credenciales de acceso a AWS Amplify Key y Secret serán compartido por un medio seguro
+   ```env
+   AWS_ACCESS_KEY_ID=***
+   AWS_SECRET_ACCESS_KEY=***
+   AWS_REGION=us-east-1
+   ```
+
+5. Iniciar applicacioón
 
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+6. Descarga Expo Go desde las tiendas oficiales y escanear el código QR
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Arquitectura del Proyecto
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### Descripción General
 
-## Get a fresh project
+F2FIT es una aplicación móvil desarrollada con **Expo Go** y **TypeScript** que implementa una arquitectura serverless moderna utilizando los servicios de **AWS Amplify**. La aplicación permite a los usuarios registrar y realizar seguimiento de su bienestar diario a través de una interfaz intuitiva y responsive.
 
-When you're ready, run:
+### Stack Tecnológico
 
-```bash
-npm run reset-project
+#### Frontend
+- **Expo Go**: Framework de desarrollo móvil multiplataforma que permite el desarrollo rápido y eficiente
+- **TypeScript**: Proporciona tipado estático para mayor robustez del código
+- **Dynamic Routing**: Sistema de navegación dinámico para una experiencia de usuario fluida
+- **React Native**: Base tecnológica para la interfaz de usuario nativa
+
+#### Backend (Serverless)
+- **AWS Amplify**: Plataforma de desarrollo full-stack que proporciona servicios backend escalables
+- **Amazon DynamoDB**: Base de datos NoSQL para almacenamiento de datos de usuario
+
+### Arquitectura de Datos
+
+#### Modelo de Base de Datos (DynamoDB)
+
+La aplicación utiliza una tabla principal en DynamoDB con el siguiente esquema optimizado:
+
+```typescript
+interface UserDayInfo {
+  id: ID!                    // Identificador único del registro
+  date: AWSDate!             // Fecha del registro (formato: 'yyyy-MM-dd')
+  energyLevel: Int           // Nivel de energía (1-5)
+  emotionalState: Int        // Estado emocional (1-5)
+  notes: String              // Notas adicionales del usuario
+  habits: AWSJSON            // Hábitos del día en formato JSON
+}
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+#### Optimizaciones de Consulta
 
-## Learn more
+- **Índice Principal**: `date` está indexado como `@index(name: "byDate")` para optimizar las búsquedas por fecha
+- **Patrón de Acceso**: Un registro único por día, identificado por la fecha formateada como 'yyyy-MM-dd'
 
-To learn more about developing your project with Expo, look at the following resources:
+### Flujo de Datos
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+1. **Entrada de Datos**: El usuario ingresa información diaria a través de formularios en la aplicación móvil
+2. **Validación**: TypeScript y validaciones del lado del cliente aseguran la integridad de los datos
+3. **Almacenamiento**: Los datos se persisten en DynamoDB con indexación optimizada
+5. **Recuperación**: Las consultas utilizan el índice por fecha para recuperación eficiente de registros
 
-## Join the community
+### Api
+El acceso a datos esta separada en un capa mediante la carpeta `api`, donde se encuentra el archivo maestro `aws.ts` que cumple 2 funciones:
 
-Join our community of developers creating universal apps.
+1. **Acceso a AWS**: Contiene el API (CRUD) de acceso a AWS
+2. **Validación OFFLINE**: Valida que haya conexión a internet, en caso en que no haya conexión a internet, realizar una registro local usando `@react-native-async-storage/async-storage`.
+3. **Sincronización de datos local**: Cuando el usuario ingresa a la aplicación, valida que tenga conexión a internet, si la tiene, valida si hay registros locales pendientes por sincronizar. Si hay registros locales, los sincroniza en la nube y continua.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+### Deuda técnica
+
+Issues técnicos conocidos que requieren atención y mejora en futuras iteraciones del desarrollo.
+
+#### 1. Sincronización Offline - Actualización de Registros Existentes
+
+**Descripción del Problema:**
+La implementación actual de sincronización offline tiene una limitación crítica en el manejo de registros existentes cuando se pierde la conexión a internet.
+
+**Comportamiento Actual:**
+- ✅ **Funciona correctamente**: Cuando no hay conexión, la aplicación crea nuevos registros locales usando `@react-native-async-storage/async-storage`
+- ✅ **Funciona correctamente**: Al recuperar la conexión, sincroniza los nuevos registros locales con DynamoDB
+- ❌ **Problema identificado**: Si el usuario intenta actualizar un registro existente mientras está offline, el sistema no maneja correctamente este escenario
+
+**Tareas Requeridas:**
+- [ ] Modificar la lógica de guardado offline para distinguir entre CREATE y UPDATE
+- [ ] Crear mecanismo de resolución de conflictos para actualizaciones concurrentes
+- [ ] Agregar validación de integridad de datos en la sincronización
