@@ -1,8 +1,8 @@
 import { Image } from 'expo-image';
 import { Link } from 'expo-router';
-import React, { useEffect } from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
-import { ActivityIndicator, List } from 'react-native-paper';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, List, Snackbar } from 'react-native-paper';
 
 import { UserDayInfo } from '@/api/API';
 import api from '@/api/aws';
@@ -11,56 +11,70 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 
 export default function HistoryScreen() {
-  const [history, setHistory] = React.useState<UserDayInfo[]>();
+  const [history, setHistory] = useState<UserDayInfo[]>();
+  const [snackbarText, setSnackbarText] = useState<string | null>(null);
 
   useEffect(() => {
-    api.dayInfo.all().then(setHistory);
+    api.dayInfo.all()
+      .then(setHistory)
+      .catch((err) => {
+        setSnackbarText("No hay conexión a internet")
+        setHistory([])
+      });
   }, []);
 
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }
-    >
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Historial</ThemedText>
-      </ThemedView>
+    <View style={{ flex: 1 }}>
+      <ParallaxScrollView
+        headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
+        headerImage={
+          <Image
+            source={require('@/assets/images/partial-react-logo.png')}
+            style={styles.reactLogo}
+          />
+        }
+      >
+        <ThemedView style={styles.titleContainer}>
+          <ThemedText type="title">Historial</ThemedText>
+        </ThemedView>
 
-      {history ? (
-        history.length === 0 ? (
-          <ThemedText>No hay historial disponible.</ThemedText>
+        {history ? (
+          history.length === 0 ? (
+            <ThemedText>No hay historial disponible.</ThemedText>
+          ) : (
+            history.map((dayInfo) => (
+              <Link
+                key={dayInfo.id}
+                href={{
+                  // @ts-ignore
+                  pathname: `/history/${dayInfo.id}`,
+                  params: { dayInfo: JSON.stringify(dayInfo) }
+                }}
+                asChild
+              >
+                <TouchableOpacity>
+                  <List.Item
+                  key={dayInfo.date}
+                  style={styles.borderBottom}
+                  title={dayInfo.date}
+                  description={dayInfo.notes ? `${dayInfo.notes.substring(0, 30)}...` : '--'}
+                  left={props => <List.Icon {...props} icon="clock" />}
+                />
+                </TouchableOpacity>
+              </Link>
+            ))
+          )
         ) : (
-          history.map((dayInfo) => (
-            <Link
-              key={dayInfo.id}
-              href={{
-                // @ts-ignore
-                pathname: `/history/${dayInfo.id}`,
-                params: { dayInfo: JSON.stringify(dayInfo) }
-              }}
-              asChild
-            >
-              <TouchableOpacity>
-                <List.Item
-                key={dayInfo.date}
-                style={styles.borderBottom}
-                title={dayInfo.date}
-                description={dayInfo.notes ? `${dayInfo.notes.substring(0, 30)}...` : '--'}
-                left={props => <List.Icon {...props} icon="clock" />}
-              />
-              </TouchableOpacity>
-            </Link>
-          ))
-        )
-      ) : (
-        <ActivityIndicator size="small" style={{ marginTop: 20 }} />
-      )}
-    </ParallaxScrollView>
+          <ActivityIndicator size="small" style={{ marginTop: 20 }} />
+        )}
+      </ParallaxScrollView>
+      <Snackbar
+        visible={!!snackbarText}
+        onDismiss={() => setSnackbarText(null)}
+      >
+        {snackbarText}
+      </Snackbar>
+    </View>
   );
 }
 

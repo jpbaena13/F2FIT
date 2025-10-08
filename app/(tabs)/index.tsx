@@ -99,16 +99,20 @@ export default function HomeScreen() {
   };
 
   useEffect(() => {
-    api.dayInfo.filterByDate(getFormattedDate(today, 'yyyy-MM-dd')).then((data) => {
-      if (data) {
-        setDayInfoId(data.id);
-        setSelectedEnergy(data.energyLevel);
-        setSelectedEmotional(data.emotionalState);
-        setText(data.notes);
-        setHabits(data.habits ? data.habits : defaultHabits);
-        setSnackbarText("Ya existe un registro para hoy. Puedes actualizarlo.");
-      }
-    });
+    api.dayInfo.filterByDate(getFormattedDate(today, 'yyyy-MM-dd'))
+      .then((data) => {
+        if (data) {
+          setDayInfoId(data.id);
+          setSelectedEnergy(data.energyLevel);
+          setSelectedEmotional(data.emotionalState);
+          setText(data.notes);
+          setHabits(data.habits ? data.habits : defaultHabits);
+          setSnackbarText("Ya existe un registro para hoy. Puedes actualizarlo.");
+        }
+      })
+      .catch((err) => {
+        setSnackbarText("No hay conexión a internet, guardaremos la info localmente y luego la sincronizaremos");
+      })
   }, []);
 
   return (
